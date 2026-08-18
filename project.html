@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case File — Password Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-navy: #1B222C;
+    --desk-navy: #141920;
+    --manila: #CDB98B;
+    --manila-dark: #B8A374;
+    --paper: #F0E7CE;
+    --paper-line: #C9B98F;
+    --ink: #2A2416;
+    --ink-soft: #55503f;
+    --red: #A8382B;
+    --amber: #B97A25;
+    --green: #3E7350;
+    --gold: #8B6B2E;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+
+  body{
+    background:
+      radial-gradient(circle at 20% 10%, #232c39 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, #1c2430 0%, transparent 40%),
+      var(--desk-navy);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    padding: 40px 16px 80px;
+    line-height: 1.5;
+  }
+
+  .desk-label{
+    max-width: 720px;
+    margin: 0 auto 18px;
+    color: #6b7686;
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    display:flex;
+    justify-content: space-between;
+  }
+
+  .folder{
+    max-width: 720px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .tab{
+    display:inline-block;
+    background: var(--manila-dark);
+    color: var(--ink);
+    font-family: 'Special Elite', monospace;
+    font-size: 13px;
+    letter-spacing: .08em;
+    padding: 8px 22px 10px;
+    border-radius: 6px 6px 0 0;
+    margin-left: 28px;
+    box-shadow: 0 -1px 0 rgba(0,0,0,.15) inset;
+  }
+
+  .case{
+    background: var(--manila);
+    border-radius: 3px 10px 10px 10px;
+    padding: 30px 30px 34px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.45), 0 2px 0 rgba(255,255,255,.08) inset;
+    position: relative;
+  }
+
+  .case::before{
+    content:"";
+    position:absolute; inset: 10px;
+    border: 1px solid rgba(80,65,30,.18);
+    pointer-events:none;
+  }
+
+  h1{
+    font-family: 'Special Elite', monospace;
+    font-size: 26px;
+    margin: 0 0 4px;
+    letter-spacing: .02em;
+  }
+
+  .subhead{
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin: 0 0 26px;
+    max-width: 46ch;
+  }
+
+  .field-row{
+    display:flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+
+  label{
+    display:block;
+    font-size: 10.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .input-wrap{
+    position: relative;
+  }
+
+  input[type="password"], input[type="text"]{
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--paper-line);
+    border-radius: 3px;
+    padding: 12px 44px 12px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  input:focus-visible{
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+  }
+
+  .toggle-vis{
+    position:absolute;
+    right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none;
+    font-size: 10.5px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 6px 8px;
+  }
+  .toggle-vis:hover{ color: var(--ink); }
+
+  .run-btn{
+    margin-top: 22px;
+    width: 100%;
+    background: var(--red);
+    color: #F2E6DA;
+    border: none;
+    border-radius: 3px;
+    padding: 14px;
+    font-family: 'Special Elite', monospace;
+    font-size: 14px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform .08s ease, background .15s ease;
+  }
+  .run-btn:hover{ background: #8f2f24; }
+  .run-btn:active{ transform: scale(.99); }
+  .run-btn:disabled{ opacity:.55; cursor: progress; }
+
+  .privacy-note{
+    margin-top: 14px;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  .clear-history{
+    background:none;border:none;color: var(--gold);
+    text-decoration: underline;
+    font-family: inherit; font-size: 10.5px; cursor:pointer; padding:0;
+  }
+
+  /* ---------- Report ---------- */
+  .report{
+    margin-top: 30px;
+    padding-top: 26px;
+    border-top: 2px dashed var(--paper-line);
+    display: none;
+  }
+  .report.visible{ display:block; }
+
+  .verdict-row{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+
+  .stamp{
+    font-family: 'Special Elite', monospace;
+    font-size: 22px;
+    letter-spacing: .06em;
+    padding: 10px 20px;
+    border: 3px solid currentColor;
+    border-radius: 4px;
+    display:inline-block;
+    transform: rotate(-6deg);
+    text-transform: uppercase;
+    animation: stamp-in .32s ease-out;
+    text-shadow: 0 0 1px currentColor;
+  }
+  .stamp.critical{ color: var(--red); }
+  .stamp.warning{ color: var(--amber); }
+  .stamp.clear{ color: var(--green); }
+
+  @keyframes stamp-in{
+    0%{ transform: rotate(-6deg) scale(2.2); opacity:0; }
+    60%{ opacity:1; }
+    100%{ transform: rotate(-6deg) scale(1); opacity:1; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .stamp{ animation:none; }
+  }
+
+  .score-block{ text-align:right; }
+  .score-num{ font-family:'Special Elite', monospace; font-size: 30px; line-height:1; }
+  .score-label{ font-size: 10px; letter-spacing:.12em; text-transform:uppercase; color: var(--ink-soft); }
+
+  .meter{
+    height: 8px;
+    background: rgba(0,0,0,.12);
+    border-radius: 4px;
+    overflow:hidden;
+    margin: 4px 0 22px;
+  }
+  .meter-fill{
+    height: 100%;
+    border-radius: 4px;
+    transition: width .5s ease;
+  }
+
+  .section{
+    padding: 14px 0;
+    border-bottom: 1px solid var(--paper-line);
+  }
+  .section:last-child{ border-bottom:none; }
+
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .section-title{
+    font-size: 11.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .section-title::before{
+    content: "§ ";
+    color: var(--gold);
+  }
+
+  .tag{
+    font-size: 10.5px;
+    letter-spacing:.06em;
+    text-transform: uppercase;
+    padding: 2px 9px;
+    border-radius: 20px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .tag.strong{ color: var(--green); }
+  .tag.medium{ color: var(--amber); }
+  .tag.weak, .tag.critical{ color: var(--red); }
+
+  .section-body{
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  ul.plain{
+    margin: 6px 0 0;
+    padding-left: 18px;
+  }
+  ul.plain li{ margin-bottom: 4px; }
+
+  .attack-table{
+    width:100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-top: 4px;
+  }
+  .attack-table td{ padding: 5px 0; }
+  .attack-table td:last-child{ text-align:right; }
+
+  .charset-grid{
+    display:flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .charset-item{
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+  .charset-item.on{ color: var(--green); font-weight:600; }
+
+  footer.meta{
+    max-width: 720px;
+    margin: 22px auto 0;
+    text-align:center;
+    font-size: 10.5px;
+    color: #55606f;
+  }
+
+  @media (max-width: 560px){
+    .case{ padding: 22px 18px 26px; }
+    h1{ font-size: 21px; }
+    .stamp{ font-size: 17px; }
+    .score-num{ font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="desk-label">
+    <span>SECURITY LAB — INTAKE DESK</span>
+    <span id="clock"></span>
+  </div>
+
+  <div class="folder">
+    <div class="tab">CASE FILE / PW-ANALYSIS</div>
+    <div class="case">
+      <h1>Password Analysis</h1>
+      <p class="subhead">Enter a password below. It is examined against breach records, common-password mutations, and attack resistance — the plaintext never leaves your device except as an irreversible partial hash sent to the breach registry.</p>
+
+      <form id="intake-form">
+        <div class="field-row">
+          <div>
+            <label for="pw-input">Password under review</label>
+            <div class="input-wrap">
+              <input type="password" id="pw-input" autocomplete="new-password" spellcheck="false" required>
+              <button type="button" class="toggle-vis" id="toggle-vis">Show</button>
+            </div>
+          </div>
+          <div>
+            <label for="user-input">Account label <span style="text-transform:none;letter-spacing:0;font-weight:400;">(optional — used only to keep your own reuse history separate)</span></label>
+            <input type="text" id="user-input" placeholder="e.g. work-email, default" autocomplete="off">
+          </div>
+        </div>
+
+        <button type="submit" class="run-btn" id="run-btn">Open the file</button>
+      </form>
+
+      <p class="privacy-note">
+        Reuse history is stored only for you, tied to the account label above, so this tool can flag a password you've already logged. Nothing is shared with other users. <button type="button" class="clear-history" id="clear-history">Clear my saved history</button>
+      </p>
+
+      <div class="report" id="report">
+        <div class="verdict-row">
+          <div class="stamp" id="stamp">—</div>
+          <div class="score-block">
+            <div class="score-num" id="score-num">0</div>
+            <div class="score-label">Security Score / 100</div>
+          </div>
+        </div>
+        <div class="meter"><div class="meter-fill" id="meter-fill"></div></div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">Breach registry</div>
+            <div class="tag" id="hibp-tag">—</div>
+          </div>
+          <div class="section-body" id="hibp-body">Checking...</div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">Mutation match</div>
+            <div class="tag" id="mutation-tag">—</div>
+          </div>
+          <div class="section-body" id="mutation-body"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">Composition</div>
+          </div>
+          <div class="section-body">
+            <div class="charset-grid" id="charset-grid"></div>
+            <ul class="plain" id="suggestions-list"></ul>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">Attack resistance</div>
+          </div>
+          <div class="section-body">
+            <table class="attack-table" id="attack-table"></table>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">Reuse check</div>
+            <div class="tag" id="reuse-tag">—</div>
+          </div>
+          <div class="section-body" id="reuse-body"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="meta">Educational tool. Breach lookups use the k-anonymity method (only a 5-character hash prefix is sent). Nothing here should be the only line of defense on a real account.</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- clock ----------
+  function tickClock(){
+    var d = new Date();
+    document.getElementById('clock').textContent = d.toLocaleDateString(undefined,{month:'2-digit',day:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  }
+  tickClock(); setInterval(tickClock, 30000);
+
+  // ---------- common password corpus (subset for mutation detection) ----------
+  var COMMON = ["password","123456","123456789","qwerty","letmein","welcome","admin","abc123",
+    "iloveyou","monkey","dragon","football","baseball","master","login","princess","sunshine",
+    "shadow","superman","michael","jennifer","hunter","trustno1","batman","zaq1zaq1","password1",
+    "qwerty123","1q2w3e4r","password123","charlie","donald","freedom","whatever","qazwsx",
+    "michelle","jordan","tigger","starwars","cheese","summer","daniel","hannah","hockey","ranger",
+    "buster","soccer","harley","hello","ginger","banana","flower","purple","orange","chocolate",
+    "computer","internet","samsung","google","facebook","instagram","twitter","netflix","spotify",
+    "amazon","apple123","fuckyou","asshole","fuckoff","pokemon","minecraft","fortnite","chelsea",
+    "arsenal","liverpool","aaaaaa","111111","000000","121212","696969","1234567","12345678",
+    "1234567890","qwertyuiop","asdfghjkl","zxcvbnm","password!","p@ssword","p@ssw0rd","passw0rd",
+    "letmein123","admin123","root","toor","test","guest","changeme","default","temp","secret"];
+
+  var LEET_MAP = {"@":"a","4":"a","3":"e","1":"i","!":"i","0":"o","$":"s","5":"s","7":"t","+":"t"};
+  function deleet(s){
+    return s.toLowerCase().split('').map(function(c){ return LEET_MAP[c] || c; }).join('');
+  }
+
+  function bigrams(s){
+    var out = [];
+    for (var i=0; i<s.length-1; i++) out.push(s.substr(i,2));
+    return out;
+  }
+
+  // Dice coefficient over bigrams — same spirit as difflib's SequenceMatcher ratio
+  function similarity(a, b){
+    if (a.length < 2 || b.length < 2) return a === b ? 1 : 0;
+    var ba = bigrams(a), bb = bigrams(b).slice();
+    var matches = 0;
+    for (var i=0; i<ba.length; i++){
+      var idx = bb.indexOf(ba[i]);
+      if (idx !== -1){ matches++; bb.splice(idx,1); }
+    }
+    return (2 * matches) / (ba.length + bigrams(b).length);
+  }
+
+  function detectMutation(password){
+    var lower = password.toLowerCase();
+    var normalized = deleet(password);
+    var results = [];
+    COMMON.forEach(function(common){
+      var directScore = similarity(lower, common);
+      var leetScore = similarity(normalized, common);
+      var contains = (lower.indexOf(common) !== -1 || normalized.indexOf(common) !== -1) && common.length >= 5;
+      var score = Math.max(directScore, leetScore, contains ? 0.9 : 0);
+      if (score >= 0.55) results.push({ base: common, score: score });
+    });
+    results.sort(function(a,b){ return b.score - a.score; });
+    var seen = {}, unique = [];
+    results.forEach(function(r){
+      if (!seen[r.base]){ seen[r.base] = true; unique.push(r); }
+    });
+    return unique.slice(0,4);
+  }
+
+  // ---------- smart suggestions ----------
+  var SEQUENCES = ["0123456789","abcdefghijklmnopqrstuvwxyz","qwertyuiop","asdfghjkl","zxcvbnm"];
+  var SPECIAL = "!@#$%^&*()-_=+[]{};:,.<>/?";
+
+  function hasSequence(password){
+    var lower = password.toLowerCase();
+    for (var i=0; i<SEQUENCES.length; i++){
+      var seq = SEQUENCES[i];
+      for (var j=0; j<=seq.length-3; j++){
+        var chunk = seq.substr(j,3);
+        var rev = chunk.split('').reverse().join('');
+        if (lower.indexOf(chunk) !== -1 || lower.indexOf(rev) !== -1) return true;
+      }
+    }
+    return false;
+  }
+
+  function hasRepeat(password){
+    return /(.)\1{2,}/.test(password);
+  }
+
+  function composition(password){
+    return {
+      lower: /[a-z]/.test(password),
+      upper: /[A-Z]/.test(password),
+      digit: /[0-9]/.test(password),
+      special: new RegExp('[' + SPECIAL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ']').test(password)
+    };
+  }
+
+  function smartSuggestions(password, comp){
+    var out = [];
+    if (!comp.upper) out.push("Add an uppercase letter (A–Z).");
+    if (!comp.lower) out.push("Add a lowercase letter (a–z).");
+    if (!comp.digit) out.push("Add a number (0–9).");
+    if (!comp.special) out.push("Add a special character, e.g. " + SPECIAL[Math.floor(Math.random()*8)]);
+    if (password.length < 12) out.push("Lengthen it to at least 12 characters — length matters more than complexity.");
+    if (hasSequence(password)) out.push("Break up the keyboard or number sequence it contains (e.g. 123, qwerty).");
+    if (hasRepeat(password)) out.push("Reduce the repeated-character run (e.g. aaa, 111).");
+    if (out.length === 0) out.push("No structural weaknesses found — this is a solid pattern.");
+    return out;
+  }
+
+  // ---------- attack resistance ----------
+  function charsetSize(comp){
+    var n = 0;
+    if (comp.lower) n += 26;
+    if (comp.upper) n += 26;
+    if (comp.digit) n += 10;
+    if (comp.special) n += 32;
+    return n || 1;
+  }
+
+  function crackTimeString(password, comp){
+    var size = charsetSize(comp);
+    var combos = Math.pow(size, password.length);
+    var guessesPerSecond = 1e10; // offline fast-hash attack estimate
+    var seconds = combos / guessesPerSecond / 2;
+    if (!isFinite(seconds)) return "longer than the age of the universe";
+    var units = [
+      [31536000000, "centuries", 100],
+      [31536000, "years", 1],
+      [2592000, "months", 1],
+      [86400, "days", 1],
+      [3600, "hours", 1],
+      [60, "minutes", 1],
+      [1, "seconds", 1]
+    ];
+    for (var i=0; i<units.length; i++){
+      var divisor = units[i][0], label = units[i][1], scale = units[i][2];
+      if (seconds >= divisor){
+        var val = seconds / divisor / scale;
+        return (scale > 1 ? Math.round(val).toLocaleString() : Math.round(val)) + " " + label;
+      }
+    }
+    return "under a second";
+  }
+
+  function attackResistance(password, comp, breachCount, mutationFound){
+    var rows = [];
+
+    var bruteLabel;
+    if (password.length >= 14 && charsetSize(comp) >= 60) bruteLabel = "strong";
+    else if (password.length >= 10) bruteLabel = "medium";
+    else bruteLabel = "weak";
+    rows.push({ name: "Brute force", level: bruteLabel, detail: "Estimated crack time: " + crackTimeString(password, comp) });
+
+    var dictLabel = mutationFound ? "weak" : "strong";
+    rows.push({ name: "Dictionary attack", level: dictLabel, detail: mutationFound ? "Built on a known common password." : "No known base word detected." });
+
+    var credLabel = breachCount === null ? "medium" : (breachCount > 0 ? "critical" : "strong");
+    rows.push({ name: "Credential stuffing", level: credLabel, detail: breachCount === null ? "Breach registry unreachable." : (breachCount > 0 ? "Seen in " + breachCount.toLocaleString() + " prior breaches." : "Not found in known breach data.") });
+
+    var patternLabel = (hasSequence(password) || hasRepeat(password)) ? "weak" : "strong";
+    rows.push({ name: "Pattern attack", level: patternLabel, detail: (hasSequence(password) || hasRepeat(password)) ? "Contains a predictable sequence or repeat." : "No obvious keyboard pattern." });
+
+    return rows;
+  }
+
+  // ---------- hashing ----------
+  function bufferToHex(buffer){
+    return Array.from(new Uint8Array(buffer)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  }
+  async function sha1Hex(str){
+    var enc = new TextEncoder().encode(str);
+    var digest = await crypto.subtle.digest('SHA-1', enc);
+    return bufferToHex(digest).toUpperCase();
+  }
+  async function sha256Hex(str){
+    var enc = new TextEncoder().encode(str);
+    var digest = await crypto.subtle.digest('SHA-256', enc);
+    return bufferToHex(digest);
+  }
+
+  // ---------- HIBP (k-anonymity) ----------
+  async function checkHIBP(password){
+    try{
+      var full = await sha1Hex(password);
+      var prefix = full.substr(0,5), suffix = full.substr(5);
+      var res = await fetch('https://api.pwnedpasswords.com/range/' + prefix);
+      if (!res.ok) return null;
+      var text = await res.text();
+      var lines = text.split('\n');
+      for (var i=0; i<lines.length; i++){
+        var parts = lines[i].split(':');
+        if (parts[0] === suffix) return parseInt(parts[1].trim(), 10);
+      }
+      return 0;
+    } catch(e){
+      return null;
+    }
+  }
+
+  // ---------- reuse history via persistent storage ----------
+  async function checkAndRecordReuse(username, password){
+    var key = 'pw-history:' + (username || 'default');
+    var hash = await sha256Hex(password);
+    var list = [];
+    try{
+      var existing = await window.storage.get(key, false);
+      if (existing && existing.value) list = JSON.parse(existing.value);
+    } catch(e){ /* key doesn't exist yet */ }
+
+    var reused = list.indexOf(hash) !== -1;
+    if (!reused){
+      list.push(hash);
+      if (list.length > 25) list = list.slice(list.length - 25);
+      try{ await window.storage.set(key, JSON.stringify(list), false); } catch(e){ /* best effort */ }
+    }
+    return reused;
+  }
+
+  // ---------- scoring ----------
+  function computeScore(comp, password, breachCount, mutations, attackRows){
+    var score = 100;
+    if (!comp.upper) score -= 10;
+    if (!comp.lower) score -= 10;
+    if (!comp.digit) score -= 10;
+    if (!comp.special) score -= 12;
+    if (password.length < 8) score -= 30;
+    else if (password.length < 12) score -= 14;
+    else if (password.length >= 16) score += 4;
+    if (breachCount) score -= 40;
+    if (breachCount === 0) score += 4;
+    if (mutations.length) score -= 15;
+    if (hasSequence(password)) score -= 10;
+    if (hasRepeat(password)) score -= 8;
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  // ---------- render ----------
+  function levelTag(level){
+    return '<span class="tag ' + level + '">' + level + '</span>';
+  }
+
+  function render(data){
+    document.getElementById('report').classList.add('visible');
+
+    var stampEl = document.getElementById('stamp');
+    var stampClass, stampText;
+    if (data.score >= 80){ stampClass = 'clear'; stampText = 'Cleared'; }
+    else if (data.score >= 55){ stampClass = 'warning'; stampText = 'At risk'; }
+    else { stampClass = 'critical'; stampText = 'Compromised'; }
+    stampEl.className = 'stamp ' + stampClass;
+    stampEl.textContent = stampText;
+    // restart animation
+    void stampEl.offsetWidth;
+    stampEl.style.animation = 'none';
+    void stampEl.offsetWidth;
+    stampEl.style.animation = '';
+
+    document.getElementById('score-num').textContent = data.score;
+    var fill = document.getElementById('meter-fill');
+    fill.style.width = data.score + '%';
+    fill.style.background = data.score >= 80 ? 'var(--green)' : data.score >= 55 ? 'var(--amber)' : 'var(--red)';
+
+    // HIBP
+    var hibpTag = document.getElementById('hibp-tag');
+    var hibpBody = document.getElementById('hibp-body');
+    if (data.breachCount === null){
+      hibpTag.outerHTML = '<span class="tag medium" id="hibp-tag">unknown</span>';
+      hibpBody.textContent = "Couldn't reach the breach registry right now. Try again in a moment.";
+    } else if (data.breachCount > 0){
+      hibpTag.outerHTML = '<span class="tag critical" id="hibp-tag">found</span>';
+      hibpBody.textContent = "This password has appeared in " + data.breachCount.toLocaleString() + " known breach dataset entries. Treat it as public and retire it.";
+    } else {
+      hibpTag.outerHTML = '<span class="tag strong" id="hibp-tag">clear</span>';
+      hibpBody.textContent = "Not found in the breach registry checked. That doesn't guarantee safety elsewhere, but it's a good sign.";
+    }
+
+    // Mutation
+    var mutTag = document.getElementById('mutation-tag');
+    var mutBody = document.getElementById('mutation-body');
+    if (data.mutations.length){
+      mutTag.outerHTML = '<span class="tag weak" id="mutation-tag">match</span>';
+      mutBody.innerHTML = "Close to a commonly used password: " + data.mutations.map(function(m){
+        return "<strong>" + m.base + "</strong> (" + Math.round(m.score*100) + "% similar)";
+      }).join(', ') + ".";
+    } else {
+      mutTag.outerHTML = '<span class="tag strong" id="mutation-tag">none</span>';
+      mutBody.textContent = "No resemblance to common passwords in this tool's reference list.";
+    }
+
+    // Composition + suggestions
+    var grid = document.getElementById('charset-grid');
+    grid.innerHTML = ['lower','upper','digit','special'].map(function(k){
+      var labelMap = {lower:'a–z', upper:'A–Z', digit:'0–9', special:'symbol'};
+      return '<span class="charset-item ' + (data.comp[k] ? 'on' : '') + '">' + labelMap[k] + (data.comp[k] ? ' ✓' : ' —') + '</span>';
+    }).join('') + '<span class="charset-item">length ' + data.password.length + '</span>';
+
+    document.getElementById('suggestions-list').innerHTML = data.suggestions.map(function(s){ return '<li>' + s + '</li>'; }).join('');
+
+    // Attack table
+    document.getElementById('attack-table').innerHTML = data.attackRows.map(function(r){
+      return '<tr><td>' + r.name + '<br><span style="font-size:11px;color:var(--ink-soft);">' + r.detail + '</span></td><td>' + levelTag(r.level) + '</td></tr>';
+    }).join('');
+
+    // Reuse
+    var reuseTag = document.getElementById('reuse-tag');
+    var reuseBody = document.getElementById('reuse-body');
+    if (data.reused){
+      reuseTag.outerHTML = '<span class="tag weak" id="reuse-tag">reused</span>';
+      reuseBody.textContent = "This matches a password already logged under this account label. Using one password across accounts means one breach exposes all of them.";
+    } else {
+      reuseTag.outerHTML = '<span class="tag strong" id="reuse-tag">new</span>';
+      reuseBody.textContent = "Not seen before under this account label. It's now recorded (as a hash, never the password itself) for future checks.";
+    }
+  }
+
+  // ---------- wire up ----------
+  document.getElementById('toggle-vis').addEventListener('click', function(){
+    var input = document.getElementById('pw-input');
+    var isPw = input.type === 'password';
+    input.type = isPw ? 'text' : 'password';
+    this.textContent = isPw ? 'Hide' : 'Show';
+  });
+
+  document.getElementById('clear-history').addEventListener('click', async function(){
+    var username = document.getElementById('user-input').value.trim();
+    var key = 'pw-history:' + (username || 'default');
+    try{
+      await window.storage.delete(key, false);
+      this.textContent = 'Cleared';
+      setTimeout(function(){ document.getElementById('clear-history').textContent = 'Clear my saved history'; }, 1800);
+    } catch(e){
+      this.textContent = 'Nothing to clear';
+      setTimeout(function(){ document.getElementById('clear-history').textContent = 'Clear my saved history'; }, 1800);
+    }
+  });
+
+  document.getElementById('intake-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var btn = document.getElementById('run-btn');
+    var password = document.getElementById('pw-input').value;
+    var username = document.getElementById('user-input').value.trim();
+    if (!password) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Opening the file…';
+
+    var comp = composition(password);
+    var mutations = detectMutation(password);
+    var suggestions = smartSuggestions(password, comp);
+
+    var breachCount = await checkHIBP(password);
+    var attackRows = attackResistance(password, comp, breachCount, mutations.length > 0);
+    var reused = await checkAndRecordReuse(username, password);
+    var score = computeScore(comp, password, breachCount, mutations, attackRows);
+
+    render({
+      password: password,
+      comp: comp,
+      mutations: mutations,
+      suggestions: suggestions,
+      breachCount: breachCount,
+      attackRows: attackRows,
+      reused: reused,
+      score: score
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Open the file';
+  });
+})();
+</script>
+</body>
+</html>
